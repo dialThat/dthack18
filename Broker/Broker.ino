@@ -24,7 +24,7 @@ REST:   https://130.61.84.222:4442/rest/trackathon
 // Include packet id feature
 // the sender is the receiver on the PJON line
 // we use bitbannging on port D3
-#define PJON_PIN D3
+#define PJON_PIN D7
 
 #define PJON_INCLUDE_PACKET_ID true
 
@@ -48,13 +48,13 @@ int PJON_busy;
 int PJON_fail;
 
 // <Strategy name> bus(selected device id)
-PJON<SoftwareBitBang> bus(44);
+PJON<SoftwareBitBang> bus(2);
 
 char jsonBuffer[1000] = { 0 }; 
 
 //wlanRouter @ Home  / e.g. the AP
-char ssid[] = "WLAN-4711_007";
-char pass[] = "2183111111133389778";
+char ssid[] = "TelekomOS3";
+char pass[] = "#dthack18";
 
 WiFiClientSecure client;
 
@@ -127,7 +127,8 @@ void WIFI_Connect()
   if (WiFi.status() != WL_CONNECTED) {                   
     WiFi.mode(WIFI_STA);
     delay(300);
-    WiFi.begin("TelekomOS3", "#dthack03");   
+    Serial.println(F("\Connecting to Wifi"));
+    WiFi.begin(ssid, pass);   
     Serial.print(".");  
   }
   while (WiFi.status() != WL_CONNECTED) {
@@ -158,7 +159,10 @@ setupPJON();
 void loop() {
 
   unsigned long currentMillis = millis(); // grab current time  -  check if "interval" time has passed (eg. some sec to do something )
-      loopPJON();
+  
+  loopPJON();
+
+  return;
 
   if ((unsigned long)(currentMillis - refreshTheLoopTimer_passedMillies) >= OUTER_LOOP_LONG_TIMER) {
     refreshTheLoopTimer_passedMillies = millis();
@@ -203,56 +207,31 @@ void setupPJON() {
   Serial.begin(115200);
 };
 
-void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
+void receiver_function(
+  uint8_t *payload, 
+  uint16_t length, 
+  const PJON_Packet_Info &packet_info
+) {
+  if (length > 0) {
+    char * dataString = NULL;
+    dataString = (char *)malloc(length + 1);
+    strncpy (dataString, (char *)payload, length);
+    dataString[length] = 0;
+    Serial.print (dataString);
+    Serial.print ("\n");
+    free(dataString);  
+  }
+    digitalWrite(13, HIGH);
+    delay(30);
+    digitalWrite(13, LOW);
+}
+
+/* void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   Serial.print("Packet id: ");
   Serial.println(packet_info.id);
   Serial.flush();
-}
+} */
 
 void loopPJON() {
-  Serial.println("Starting 1 second communication speed test...");
-  long time = millis();
-  unsigned int response = 0;
-  while(millis() - time < 1000) {
-    response = bus.receive();
-    if(response == PJON_ACK)
-      PJON_test++;
-    if(response == PJON_NAK)
-      PJON_mistakes++;
-    if(response == PJON_BUSY)
-      PJON_busy++;
-    if(response == PJON_FAIL)
-      PJON_fail++;
-  }
-
-  Serial.print("Packet Overhead: ");
-  Serial.print(bus.packet_overhead(bus.last_packet_info.header) + 1);
-  Serial.print("B - Total: ");
-  Serial.print((unsigned int)((bus.packet_overhead(bus.last_packet_info.header) + 1) * PJON_test));
-  Serial.println("B");
-  Serial.print("Bandwidth: ");
-  Serial.print(PJON_test * (20 + bus.packet_overhead(bus.last_packet_info.header) + 1));
-  Serial.println("B/s");
-  Serial.print("Data throughput: ");
-  Serial.print(PJON_test * 20);
-  Serial.println("B/s");
-  Serial.print("Packets sent: ");
-  Serial.println(PJON_test);
-  Serial.print("PJON_mistakes (error found with CRC): ");
-  Serial.println(PJON_mistakes);
-  Serial.print("Fail (no data found): ");
-  Serial.println(PJON_fail);
-  Serial.print("Busy (Channel is busy or affected by interference): ");
-  Serial.println(PJON_busy);
-  Serial.print("Accuracy: ");
-  Serial.print(100 - (100 / (PJON_test / PJON_mistakes)));
-  Serial.println(" %");
-  Serial.println(" --------------------- ");
-  // Avoid Serial interference during test flushing
-  Serial.flush();
-
-  PJON_test = 0;
-  PJON_mistakes = 0;
-  PJON_busy = 0;
-  PJON_fail = 0;
+  bus.receive(1000);
 };
