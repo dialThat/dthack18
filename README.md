@@ -10,10 +10,10 @@ https://github.com/adrianmihalko/ch340g-ch34g-ch34x-mac-os-x-driver
 http://arduino.esp8266.com/stable/package_esp8266com_index.json
 
 ## Node MCU
-#pin layout
+###pin layout
 https://www.teachmemicro.com/nodemcu-pinout/
 
-#cloud service
+###cloud service
 130.61.84.222
 (common platform)
 (common pwd)
